@@ -39,3 +39,15 @@ def test_replayed_event_is_counted_once():
     ])
     report = daily_revenue(events)
     assert report["revenue_cents"].tolist() == [4000]
+
+
+def test_replay_does_not_absorb_other_events_on_the_same_day():
+    # Deduplicating evt_r must not drop the other real event on 2026-10-30.
+    events = frame([
+        ("evt_r", "ord_9", "2026-10-30T09:00:00Z", "2026-10-30T09:00:01Z", 4000),
+        ("evt_r", "ord_9", "2026-10-30T09:00:00Z", "2026-10-30T09:06:30Z", 4000),
+        ("evt_s", "ord_10", "2026-10-30T14:00:00Z", "2026-10-30T14:00:01Z", 2100),
+    ])
+    report = daily_revenue(events)
+    assert report["day"].tolist() == ["2026-10-30"]
+    assert report["revenue_cents"].tolist() == [6100]
