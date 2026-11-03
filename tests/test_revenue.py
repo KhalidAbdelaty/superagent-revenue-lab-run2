@@ -18,7 +18,7 @@ def frame(rows):
 def test_daily_totals_match_known_values():
     report = daily_revenue(load_events(DATA))
     totals = dict(zip(report["day"], report["revenue_cents"]))
-    assert totals == {"2026-10-28": 20398, "2026-10-29": 27550}
+    assert totals == {"2026-10-28": 20398, "2026-10-29": 27550, "2026-10-30": 15100}
 
 
 def test_events_on_the_same_order_are_all_counted():
@@ -29,3 +29,13 @@ def test_events_on_the_same_order_are_all_counted():
     ])
     report = daily_revenue(events)
     assert report["revenue_cents"].tolist() == [1250]
+
+
+def test_replayed_event_is_counted_once():
+    # The payment webhook delivered evt_r twice; received_at differs, event_id does not.
+    events = frame([
+        ("evt_r", "ord_9", "2026-10-30T09:00:00Z", "2026-10-30T09:00:01Z", 4000),
+        ("evt_r", "ord_9", "2026-10-30T09:00:00Z", "2026-10-30T09:06:30Z", 4000),
+    ])
+    report = daily_revenue(events)
+    assert report["revenue_cents"].tolist() == [4000]
